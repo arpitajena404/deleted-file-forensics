@@ -1,0 +1,38 @@
+{
+  "case_name": "Investigation of Deleted File: BUDGET_DRAFT.txt",
+  "scenario": "Controlled student virtual Windows NTFS disk image",
+  "target_file": {
+    "filename": "BUDGET_DRAFT.txt",
+    "mft_record": 38,
+    "original_size_bytes": 327,
+    "sha256": "812c8c38e44b0cf4a6501bf015b6e079c2b376b453f3b37874710a49598ce6b4",
+    "md5": "3c784cbfcc2974984f5889e6c83ba521",
+    "created_time_utc": "2026-10-24T11:30:00+00:00",
+    "modified_time_utc": "2026-10-24T12:00:00+00:00",
+    "deletion_event_utc": "2026-10-24T12:42:00+00:00",
+    "content_snippet": "CONFIDENTIAL & PRIVILEGED - ACME CORP 2026 FINANCIAL RESTRUCTURING DRAFT\nDate: October 24, 2026\nAuth..."
+  },
+  "control_files": [
+    {
+      "filename": "README.txt",
+      "mft_record": 36,
+      "status": "Allocated",
+      "size_bytes": 133,
+      "sha256": "672bee79277683cf0676bca37b51a23a611b41cbb49b6ccbd7d48001dae211b7"
+    },
+    {
+      "filename": "MEETING_NOTES.txt",
+      "mft_record": 37,
+      "status": "Allocated",
+      "size_bytes": 138,
+      "sha256": "8636751ee42f962a73fd144bb0ce35dad3be38f5df4677d50225bc4cc285427a"
+    }
+  ],
+  "image_specifications": {
+    "bytes_per_sector": 512,
+    "sectors_per_cluster": 8,
+    "total_sectors": 4096,
+    "partition_offset_bytes": 0,
+    "is_mbr_partitioned": false
+  }
+}

@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Forensic Case Report: Investigation of a Deleted File (CASE-2026-001)</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: #1e293b;
+            background: #f1f5f9;
+            margin: 0;
+            padding: 20px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .report-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            padding: 40px;
+        }
+        header {
+            border-bottom: 3px solid #0f172a;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        h1 {
+            font-size: 24px;
+            color: #0f172a;
+            margin: 0 0 8px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .subtitle {
+            color: #64748b;
+            font-size: 14px;
+            margin: 0;
+        }
+        h2 {
+            font-size: 18px;
+            color: #1e3a8a;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 6px;
+            margin-top: 32px;
+            margin-bottom: 16px;
+        }
+        h3 {
+            font-size: 15px;
+            color: #334155;
+            margin-top: 20px;
+            margin-bottom: 8px;
+        }
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            font-size: 13px;
+        }
+        .report-table th, .report-table td {
+            border: 1px solid #cbd5e1;
+            padding: 8px 12px;
+            text-align: left;
+        }
+        .report-table th {
+            background: #f8fafc;
+            color: #0f172a;
+            font-weight: 600;
+        }
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .badge-success { background: #dcfce7; color: #15803d; }
+        .badge-danger { background: #fee2e2; color: #b91c1c; }
+        .badge-warning { background: #fef3c7; color: #b45309; }
+        .badge-info { background: #e0f2fe; color: #0369a1; }
+        .alert {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            font-size: 13px;
+        }
+        .alert-info { background: #f0f9ff; border-left: 4px solid #0284c7; color: #0369a1; }
+        .alert-warning { background: #fffbeb; border-left: 4px solid #f59e0b; color: #92400e; }
+        .alert-success { background: #f0fdf4; border-left: 4px solid #16a34a; color: #166534; }
+        code {
+            background: #f1f5f9;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 12px;
+        }
+        .hex-box {
+            background: #0f172a;
+            color: #38bdf8;
+            padding: 12px;
+            border-radius: 6px;
+            font-family: Consolas, monospace;
+            font-size: 11px;
+            overflow-x: auto;
+            white-space: pre;
+        }
+        .footer {
+            margin-top: 40px;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 16px;
+            font-size: 12px;
+            color: #64748b;
+            display: flex;
+            justify-content: space-between;
+        }
+        @media print {
+            body { background: #ffffff; padding: 0; }
+            .report-container { box-shadow: none; padding: 0; }
+            .no-print { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="report-container">
+        <header>
+            <div style="float:right; text-align:right;">
+                <span class="badge badge-info">Forensic Case Record</span><br>
+                <small style="color:#64748b;">Report Generated: 2026-11-05 06:50:53 UTC</small>
+            </div>
+            <h1>Digital Crime Scene Investigation</h1>
+            <p class="subtitle">Curriculum Module: <strong>Windows Forensics &rarr; File System Analysis (NTFS)</strong></p>
+        </header>
+
+        <!-- SECTION 1 -->
+        <h2>1. Case Identification and Purpose</h2>
+        <table class="report-table">
+            <tr>
+                <th style="width:25%;">Case Identifier</th>
+                <td><code>CASE-2026-001</code></td>
+                <th style="width:25%;">Case Title</th>
+                <td><strong>Investigation of a Deleted File</strong></td>
+            </tr>
+            <tr>
+                <th>Lead Forensic Examiner</th>
+                <td>Student Forensic Examiner</td>
+                <th>Investigation Date</th>
+                <td>2026-11-05T06:50:53.011646+00:00</td>
+            </tr>
+            <tr>
+                <th>Core Investigative Objective</th>
+                <td colspan="3">
+                    Analyze a controlled Windows NTFS disk image to verify the historical existence of a deleted target file
+                    (<code>BUDGET_DRAFT.txt</code>), extract surviving metadata and timestamps, attempt bit-stream content recovery,
+                    and perform cryptographic SHA-256 hash validation against a known ground-truth baseline.
+                </td>
+            </tr>
+        </table>
+
+        <!-- SECTION 2 -->
+        <h2>2. Evidence Image Details and Integrity Verification</h2>
+        <div class="alert alert-info">
+            <strong>Chain of Custody &amp; Read-Only Protection:</strong>
+            Evidence image opened in read-only mode (<code>'rb'</code>). Working copy is hashed and verified prior to parsing.
+            No data was written to or altered within the evidence image.
+        </div>
+        <table class="report-table">
+            <tr>
+                <th style="width:25%;">Image File Path</th>
+                <td colspan="3"><code>C:\deleted-file-forensics\evidence\working_copy.raw</code></td>
+            </tr>
+            <tr>
+                <th>Image Type</th>
+                <td>Working Copy (Analysis Copy)</td>
+                <th>File Size</th>
+                <td>2,097,152 bytes</td>
+            </tr>
+            <tr>
+                <th>Image SHA-256</th>
+                <td colspan="3"><code style="word-break:break-all;">2f76ab5c2c3521c784fa013290070a7ff88d99bd27eb2ff567b798e06a7897ac</code></td>
+            </tr>
+            <tr>
+                <th>Image MD5</th>
+                <td colspan="3"><code style="word-break:break-all;">d4d8e2aa5fb55e69191cdd7520d60672</code></td>
+            </tr>
+            <tr>
+                <th>Master Image Baseline SHA-256</th>
+                <td colspan="3"><code style="word-break:break-all;">Self-Baseline (Master Image)</code></td>
+            </tr>
+            <tr>
+                <th>Integrity Match Status</th>
+                <td colspan="3">
+                    <span class='badge badge-info'>Baseline Established</span>
+                </td>
+            </tr>
+            <tr>
+                <th>NTFS Partition Offset</th>
+                <td colspan="3">0 bytes (Sector 0)</td>
+            </tr>
+            <tr>
+                <th>Examiner Acquisition Notes</th>
+                <td colspan="3">Automated forensic investigation on NTFS disk image</td>
+            </tr>
+        </table>
+
+        <!-- SECTION 3 -->
+        <h2>3. Forensic Tools, Environment, and Specifications</h2>
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th>Component</th>
+                    <th>Specification / Version</th>
+                    <th>Role in Investigation</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Investigation Engine</td>
+                    <td><code>deleted-file-forensics v1.0.0</code> (Python 3.14)</td>
+                    <td>Direct binary NTFS VBR, MBR, GPT, and $MFT parser; recovery &amp; hash engine</td>
+                </tr>
+                <tr>
+                    <td>Hashing Algorithms</td>
+                    <td>SHA-256 (FIPS 180-4), MD5 (RFC 1321)</td>
+                    <td>Cryptographic integrity verification and content matching</td>
+                </tr>
+                <tr>
+                    <td>Target File System</td>
+                    <td>Microsoft Windows NTFS (New Technology File System 3.1)</td>
+                    <td>Controlled virtual disk image formatted with $MFT record size 1024 bytes</td>
+                </tr>
+                <tr>
+                    <td>Cross-Check Module</td>
+                    <td>The Sleuth Kit (fls / bodyfile) / Autopsy Export Importer</td>
+                    <td>Independent secondary validation cross-check</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- SECTION 4 -->
+        <h2>4. Target File Identification and Metadata Breakdown</h2>
+        <p>
+            The file system scan discovered a total of <strong>8</strong> Master File Table records
+            (<strong>7</strong> active/allocated, <strong>1</strong> unallocated/deleted).
+        </p>
+        
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th>Attribute Category</th>
+                    <th>Forensic Parameter</th>
+                    <th>Observed Value</th>
+                    <th>Significance</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td rowspan="4"><strong>File Identity</strong></td>
+                    <td>Filename</td>
+                    <td><code>BUDGET_DRAFT.txt</code></td>
+                    <td>Extracted from $FILE_NAME (0x30)</td>
+                </tr>
+                <tr>
+                    <td>Path</td>
+                    <td><code>\BUDGET_DRAFT.txt</code></td>
+                    <td>Resolved via Parent Record 5</td>
+                </tr>
+                <tr>
+                    <td>$MFT Record Index</td>
+                    <td><code>38</code> (Seq: 2)</td>
+                    <td>Unique metadata position in Master File Table</td>
+                </tr>
+                <tr>
+                    <td>Allocation Status</td>
+                    <td><span class="badge badge-danger">Deleted / Unallocated</span> (Flags: 0x0000)</td>
+                    <td>In-Use bit 0 is cleared; indicates file was unlinked</td>
+                </tr>
+                <tr>
+                    <td rowspan="2"><strong>Data Stream</strong></td>
+                    <td>File Size / Allocated</td>
+                    <td>327 bytes (Allocated: 327 bytes)</td>
+                    <td>Size recorded in $DATA and $FILE_NAME</td>
+                </tr>
+                <tr>
+                    <td>Stream Storage Type</td>
+                    <td>Resident ($DATA fits within 1024-byte MFT record)</td>
+                    <td>Content directly preserved in MFT slack</td>
+                </tr>
+                <tr>
+                    <td rowspan="4"><strong>$STANDARD_INFO (0x10)</strong></td>
+                    <td>Creation Time</td>
+                    <td>2026-10-24 11:30:00 UTC</td>
+                    <td>Standard shell creation timestamp</td>
+                </tr>
+                <tr>
+                    <td>Content Modified Time</td>
+                    <td>2026-10-24 12:00:00 UTC</td>
+                    <td>Last content write before deletion</td>
+                </tr>
+                <tr>
+                    <td>MFT Modified Time</td>
+                    <td>2026-10-24 12:42:00 UTC</td>
+                    <td>Correlates to deallocation/deletion event</td>
+                </tr>
+                <tr>
+                    <td>Last Accessed Time</td>
+                    <td>2026-10-24 12:00:00 UTC</td>
+                    <td>File read access timestamp</td>
+                </tr>
+                <tr>
+                    <td rowspan="4"><strong>$FILE_NAME (0x30)</strong></td>
+                    <td>Creation Time</td>
+                    <td>2026-10-24 11:30:00 UTC</td>
+                    <td>Directory entry creation (timestomp-resistant)</td>
+                </tr>
+                <tr>
+                    <td>Content Modified Time</td>
+                    <td>2026-10-24 12:00:00 UTC</td>
+                    <td>Directory entry modification timestamp</td>
+                </tr>
+                <tr>
+                    <td>MFT Modified Time</td>
+                    <td>2026-10-24 12:42:00 UTC</td>
+                    <td>Directory entry MFT update</td>
+                </tr>
+                <tr>
+                    <td>Last Accessed Time</td>
+                    <td>2026-10-24 12:00:00 UTC</td>
+                    <td>Directory entry access timestamp</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        
+        <h3>Target File Resident Data Preview (MFT Slack / Stream)</h3>
+        <pre class="hex-box">0000  43 4F 4E 46 49 44 45 4E 54 49 41 4C 20 26 20 50   |CONFIDENTIAL & P|
+0010  52 49 56 49 4C 45 47 45 44 20 2D 20 41 43 4D 45   |RIVILEGED - ACME|
+0020  20 43 4F 52 50 20 32 30 32 36 20 46 49 4E 41 4E   | CORP 2026 FINAN|
+0030  43 49 41 4C 20 52 45 53 54 52 55 43 54 55 52 49   |CIAL RESTRUCTURI|
+0040  4E 47 20 44 52 41 46 54 0A 44 61 74 65 3A 20 4F   |NG DRAFT.Date: O|
+0050  63 74 6F 62 65 72 20 32 34 2C 20 32 30 32 36 0A   |ctober 24, 2026.|
+0060  41 75 74 68 6F 72 3A 20 4A 2E 20 44 6F 65 2C 20   |Author: J. Doe, |
+0070  44 69 72 65 63 74 6F 72 20 6F 66 20 43 6F 72 70   |Director of Corp|
+0080  6F 72 61 74 65 20 46 69 6E 61 6E 63 65 0A 54 61   |orate Finance.Ta|
+0090  72 67 65 74 20 41 6C 6C 6F 63 61 74 69 6F 6E 3A   |rget Allocation:|
+00A0  20 51 34 20 52 65 64 75 6E 64 61 6E 63 79 20 52   | Q4 Redundancy R|
+00B0  65 73 65 72 76 65 3A 20 24 31 2C 34 35 30 2C 30   |eserve: $1,450,0|
+00C0  30 30 20 55 53 44 0A 50 72 6F 6A 65 63 74 20 54   |00 USD.Project T|
+00D0  69 74 61 6E 20 43 6F 6E 74 69 6E 67 65 6E 63 79   |itan Contingency|
+00E0  20 46 75 6E 64 73 3A 20 24 38 32 30 2C 30 30 30   | Funds: $820,000|
+00F0  20 55 53 44 0A 4E 6F 74 69 63 65 3A 20 50 72 65   | USD.Notice: Pre|</pre>
+        
+
+        <!-- SECTION 5 -->
+        <h2>5. Chronological Timeline of Observed File System Events</h2>
+        <p>
+            The timeline below compiles empirical timestamps extracted directly from <code>$STANDARD_INFORMATION</code> (0x10)
+            and <code>$FILE_NAME</code> (0x30) attributes. All times are displayed in UTC.
+        </p>
+        <div style="overflow-x:auto;">
+            <table class="report-table" style="font-size:12px;">
+                <thead>
+                    <tr>
+                        <th>Timestamp (UTC)</th>
+                        <th>Event Description</th>
+                        <th>Target File</th>
+                        <th>Status</th>
+                        <th>Source Artifact</th>
+                        <th>Forensic Meaning</th>
+                        <th>Cautious Interpretation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 09:30:00 UTC</td>
+            <td><strong>File Created ($STANDARD_INFORMATION)</strong></td>
+            <td><code>$MFT</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 0 ($STANDARD_INFORMATION)</td>
+            <td style="font-size:0.9em;">$STANDARD_INFORMATION Creation timestamp. Reflects file creation time as maintained by the Windows shell and application layer. Can be modified by userland APIs (vulnerable to timestomping).</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 09:30:00 UTC</td>
+            <td><strong>Content Modified ($STANDARD_INFORMATION)</strong></td>
+            <td><code>$MFT</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 0 ($STANDARD_INFORMATION)</td>
+            <td style="font-size:0.9em;">$STANDARD_INFORMATION Content Altered / Modification timestamp. Updated when data stream content is written or flushed to disk.</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 09:30:00 UTC</td>
+            <td><strong>MFT Record Modified ($STANDARD_INFORMATION)</strong></td>
+            <td><code>$MFT</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 0 ($STANDARD_INFORMATION)</td>
+            <td style="font-size:0.9em;">$STANDARD_INFORMATION MFT Record Modified timestamp. Updated by the NTFS kernel driver whenever any MFT attribute is modified. Highly resistant to userland tampering.</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 09:30:00 UTC</td>
+            <td><strong>Last Accessed ($STANDARD_INFORMATION)</strong></td>
+            <td><code>$MFT</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 0 ($STANDARD_INFORMATION)</td>
+            <td style="font-size:0.9em;">$STANDARD_INFORMATION Last Access timestamp. Indicates when file was opened or read. Note: Windows often disables or defers last access updates for performance (NtfsDisableLastAccessUpdate).</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 09:30:00 UTC</td>
+            <td><strong>File Created ($FILE_NAME)</strong></td>
+            <td><code>$MFT</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 0 ($FILE_NAME)</td>
+            <td style="font-size:0.9em;">$FILE_NAME Creation timestamp. Recorded when the directory entry was first established. Copied from $STANDARD_INFORMATION at creation time and typically NOT altered by timestomping utilities.</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 09:30:00 UTC</td>
+            <td><strong>Content Modified ($FILE_NAME)</strong></td>
+            <td><code>$MFT</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 0 ($FILE_NAME)</td>
+            <td style="font-size:0.9em;">$FILE_NAME Modification timestamp. Updated when the file is renamed or moved within directories; often preserves initial modification time.</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 09:30:00 UTC</td>
+            <td><strong>MFT Record Modified ($FILE_NAME)</strong></td>
+            <td><code>$MFT</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 0 ($FILE_NAME)</td>
+            <td style="font-size:0.9em;">$FILE_NAME MFT Modified timestamp. Updated on directory metadata operations.</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 09:30:00 UTC</td>
+            <td><strong>Last Accessed ($FILE_NAME)</strong></td>
+            <td><code>$MFT</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 0 ($FILE_NAME)</td>
+            <td style="font-size:0.9em;">$FILE_NAME Last Access timestamp. Associated with directory index updates.</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 09:30:00 UTC</td>
+            <td><strong>File Created ($STANDARD_INFORMATION)</strong></td>
+            <td><code>$MFTMirr</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 1 ($STANDARD_INFORMATION)</td>
+            <td style="font-size:0.9em;">$STANDARD_INFORMATION Creation timestamp. Reflects file creation time as maintained by the Windows shell and application layer. Can be modified by userland APIs (vulnerable to timestomping).</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 09:30:00 UTC</td>
+            <td><strong>Content Modified ($STANDARD_INFORMATION)</strong></td>
+            <td><code>$MFTMirr</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 1 ($STANDARD_INFORMATION)</td>
+            <td style="font-size:0.9em;">$STANDARD_INFORMATION Content Altered / Modification timestamp. Updated when data stream content is written or flushed to disk.</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 09:30:00 UTC</td>
+            <td><strong>MFT Record Modified ($STANDARD_INFORMATION)</strong></td>
+            <td><code>$MFTMirr</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 1 ($STANDARD_INFORMATION)</td>
+            <td style="font-size:0.9em;">$STANDARD_INFORMATION MFT Record Modified timestamp. Updated by the NTFS kernel driver whenever any MFT attribute is modified. Highly resistant to userland tampering.</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 09:30:00 UTC</td>
+            <td><strong>Last Accessed ($STANDARD_INFORMATION)</strong></td>
+            <td><code>$MFTMirr</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 1 ($STANDARD_INFORMATION)</td>
+            <td style="font-size:0.9em;">$STANDARD_INFORMATION Last Access timestamp. Indicates when file was opened or read. Note: Windows often disables or defers last access updates for performance (NtfsDisableLastAccessUpdate).</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 09:30:00 UTC</td>
+            <td><strong>File Created ($FILE_NAME)</strong></td>
+            <td><code>$MFTMirr</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 1 ($FILE_NAME)</td>
+            <td style="font-size:0.9em;">$FILE_NAME Creation timestamp. Recorded when the directory entry was first established. Copied from $STANDARD_INFORMATION at creation time and typically NOT altered by timestomping utilities.</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 09:30:00 UTC</td>
+            <td><strong>Content Modified ($FILE_NAME)</strong></td>
+            <td><code>$MFTMirr</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 1 ($FILE_NAME)</td>
+            <td style="font-size:0.9em;">$FILE_NAME Modification timestamp. Updated when the file is renamed or moved within directories; often preserves initial modification time.</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 09:30:00 UTC</td>
+            <td><strong>MFT Record Modified ($FILE_NAME)</strong></td>
+            <td><code>$MFTMirr</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 1 ($FILE_NAME)</td>
+            <td style="font-size:0.9em;">$FILE_NAME MFT Modified timestamp. Updated on directory metadata operations.</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 09:30:00 UTC</td>
+            <td><strong>Last Accessed ($FILE_NAME)</strong></td>
+            <td><code>$MFTMirr</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 1 ($FILE_NAME)</td>
+            <td style="font-size:0.9em;">$FILE_NAME Last Access timestamp. Associated with directory index updates.</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 09:30:00 UTC</td>
+            <td><strong>File Created ($STANDARD_INFORMATION)</strong></td>
+            <td><code>$LogFile</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 2 ($STANDARD_INFORMATION)</td>
+            <td style="font-size:0.9em;">$STANDARD_INFORMATION Creation timestamp. Reflects file creation time as maintained by the Windows shell and application layer. Can be modified by userland APIs (vulnerable to timestomping).</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 09:30:00 UTC</td>
+            <td><strong>Content Modified ($STANDARD_INFORMATION)</strong></td>
+            <td><code>$LogFile</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 2 ($STANDARD_INFORMATION)</td>
+            <td style="font-size:0.9em;">$STANDARD_INFORMATION Content Altered / Modification timestamp. Updated when data stream content is written or flushed to disk.</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 09:30:00 UTC</td>
+            <td><strong>MFT Record Modified ($STANDARD_INFORMATION)</strong></td>
+            <td><code>$LogFile</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 2 ($STANDARD_INFORMATION)</td>
+            <td style="font-size:0.9em;">$STANDARD_INFORMATION MFT Record Modified timestamp. Updated by the NTFS kernel driver whenever any MFT attribute is modified. Highly resistant to userland tampering.</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 09:30:00 UTC</td>
+            <td><strong>Last Accessed ($STANDARD_INFORMATION)</strong></td>
+            <td><code>$LogFile</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 2 ($STANDARD_INFORMATION)</td>
+            <td style="font-size:0.9em;">$STANDARD_INFORMATION Last Access timestamp. Indicates when file was opened or read. Note: Windows often disables or defers last access updates for performance (NtfsDisableLastAccessUpdate).</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 09:30:00 UTC</td>
+            <td><strong>File Created ($FILE_NAME)</strong></td>
+            <td><code>$LogFile</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 2 ($FILE_NAME)</td>
+            <td style="font-size:0.9em;">$FILE_NAME Creation timestamp. Recorded when the directory entry was first established. Copied from $STANDARD_INFORMATION at creation time and typically NOT altered by timestomping utilities.</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 09:30:00 UTC</td>
+            <td><strong>Content Modified ($FILE_NAME)</strong></td>
+            <td><code>$LogFile</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 2 ($FILE_NAME)</td>
+            <td style="font-size:0.9em;">$FILE_NAME Modification timestamp. Updated when the file is renamed or moved within directories; often preserves initial modification time.</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 09:30:00 UTC</td>
+            <td><strong>MFT Record Modified ($FILE_NAME)</strong></td>
+            <td><code>$LogFile</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 2 ($FILE_NAME)</td>
+            <td style="font-size:0.9em;">$FILE_NAME MFT Modified timestamp. Updated on directory metadata operations.</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 09:30:00 UTC</td>
+            <td><strong>Last Accessed ($FILE_NAME)</strong></td>
+            <td><code>$LogFile</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 2 ($FILE_NAME)</td>
+            <td style="font-size:0.9em;">$FILE_NAME Last Access timestamp. Associated with directory index updates.</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 09:30:00 UTC</td>
+            <td><strong>File Created ($STANDARD_INFORMATION)</strong></td>
+            <td><code>$Volume</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 3 ($STANDARD_INFORMATION)</td>
+            <td style="font-size:0.9em;">$STANDARD_INFORMATION Creation timestamp. Reflects file creation time as maintained by the Windows shell and application layer. Can be modified by userland APIs (vulnerable to timestomping).</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 09:30:00 UTC</td>
+            <td><strong>Content Modified ($STANDARD_INFORMATION)</strong></td>
+            <td><code>$Volume</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 3 ($STANDARD_INFORMATION)</td>
+            <td style="font-size:0.9em;">$STANDARD_INFORMATION Content Altered / Modification timestamp. Updated when data stream content is written or flushed to disk.</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 09:30:00 UTC</td>
+            <td><strong>MFT Record Modified ($STANDARD_INFORMATION)</strong></td>
+            <td><code>$Volume</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 3 ($STANDARD_INFORMATION)</td>
+            <td style="font-size:0.9em;">$STANDARD_INFORMATION MFT Record Modified timestamp. Updated by the NTFS kernel driver whenever any MFT attribute is modified. Highly resistant to userland tampering.</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 09:30:00 UTC</td>
+            <td><strong>Last Accessed ($STANDARD_INFORMATION)</strong></td>
+            <td><code>$Volume</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 3 ($STANDARD_INFORMATION)</td>
+            <td style="font-size:0.9em;">$STANDARD_INFORMATION Last Access timestamp. Indicates when file was opened or read. Note: Windows often disables or defers last access updates for performance (NtfsDisableLastAccessUpdate).</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 09:30:00 UTC</td>
+            <td><strong>File Created ($FILE_NAME)</strong></td>
+            <td><code>$Volume</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 3 ($FILE_NAME)</td>
+            <td style="font-size:0.9em;">$FILE_NAME Creation timestamp. Recorded when the directory entry was first established. Copied from $STANDARD_INFORMATION at creation time and typically NOT altered by timestomping utilities.</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 09:30:00 UTC</td>
+            <td><strong>Content Modified ($FILE_NAME)</strong></td>
+            <td><code>$Volume</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 3 ($FILE_NAME)</td>
+            <td style="font-size:0.9em;">$FILE_NAME Modification timestamp. Updated when the file is renamed or moved within directories; often preserves initial modification time.</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 09:30:00 UTC</td>
+            <td><strong>MFT Record Modified ($FILE_NAME)</strong></td>
+            <td><code>$Volume</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 3 ($FILE_NAME)</td>
+            <td style="font-size:0.9em;">$FILE_NAME MFT Modified timestamp. Updated on directory metadata operations.</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 09:30:00 UTC</td>
+            <td><strong>Last Accessed ($FILE_NAME)</strong></td>
+            <td><code>$Volume</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 3 ($FILE_NAME)</td>
+            <td style="font-size:0.9em;">$FILE_NAME Last Access timestamp. Associated with directory index updates.</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 09:30:00 UTC</td>
+            <td><strong>File Created ($STANDARD_INFORMATION)</strong></td>
+            <td><code>.</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 5 ($STANDARD_INFORMATION)</td>
+            <td style="font-size:0.9em;">$STANDARD_INFORMATION Creation timestamp. Reflects file creation time as maintained by the Windows shell and application layer. Can be modified by userland APIs (vulnerable to timestomping).</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 09:30:00 UTC</td>
+            <td><strong>Content Modified ($STANDARD_INFORMATION)</strong></td>
+            <td><code>.</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 5 ($STANDARD_INFORMATION)</td>
+            <td style="font-size:0.9em;">$STANDARD_INFORMATION Content Altered / Modification timestamp. Updated when data stream content is written or flushed to disk.</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 09:30:00 UTC</td>
+            <td><strong>MFT Record Modified ($STANDARD_INFORMATION)</strong></td>
+            <td><code>.</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 5 ($STANDARD_INFORMATION)</td>
+            <td style="font-size:0.9em;">$STANDARD_INFORMATION MFT Record Modified timestamp. Updated by the NTFS kernel driver whenever any MFT attribute is modified. Highly resistant to userland tampering.</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 09:30:00 UTC</td>
+            <td><strong>Last Accessed ($STANDARD_INFORMATION)</strong></td>
+            <td><code>.</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 5 ($STANDARD_INFORMATION)</td>
+            <td style="font-size:0.9em;">$STANDARD_INFORMATION Last Access timestamp. Indicates when file was opened or read. Note: Windows often disables or defers last access updates for performance (NtfsDisableLastAccessUpdate).</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 09:30:00 UTC</td>
+            <td><strong>File Created ($FILE_NAME)</strong></td>
+            <td><code>.</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 5 ($FILE_NAME)</td>
+            <td style="font-size:0.9em;">$FILE_NAME Creation timestamp. Recorded when the directory entry was first established. Copied from $STANDARD_INFORMATION at creation time and typically NOT altered by timestomping utilities.</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 09:30:00 UTC</td>
+            <td><strong>Content Modified ($FILE_NAME)</strong></td>
+            <td><code>.</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 5 ($FILE_NAME)</td>
+            <td style="font-size:0.9em;">$FILE_NAME Modification timestamp. Updated when the file is renamed or moved within directories; often preserves initial modification time.</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 09:30:00 UTC</td>
+            <td><strong>MFT Record Modified ($FILE_NAME)</strong></td>
+            <td><code>.</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 5 ($FILE_NAME)</td>
+            <td style="font-size:0.9em;">$FILE_NAME MFT Modified timestamp. Updated on directory metadata operations.</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 09:30:00 UTC</td>
+            <td><strong>Last Accessed ($FILE_NAME)</strong></td>
+            <td><code>.</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 5 ($FILE_NAME)</td>
+            <td style="font-size:0.9em;">$FILE_NAME Last Access timestamp. Associated with directory index updates.</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 09:30:00 UTC</td>
+            <td><strong>File Created ($STANDARD_INFORMATION)</strong></td>
+            <td><code>README.txt</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 36 ($STANDARD_INFORMATION)</td>
+            <td style="font-size:0.9em;">$STANDARD_INFORMATION Creation timestamp. Reflects file creation time as maintained by the Windows shell and application layer. Can be modified by userland APIs (vulnerable to timestomping).</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 09:30:00 UTC</td>
+            <td><strong>File Created ($FILE_NAME)</strong></td>
+            <td><code>README.txt</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 36 ($FILE_NAME)</td>
+            <td style="font-size:0.9em;">$FILE_NAME Creation timestamp. Recorded when the directory entry was first established. Copied from $STANDARD_INFORMATION at creation time and typically NOT altered by timestomping utilities.</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 09:45:00 UTC</td>
+            <td><strong>Content Modified ($STANDARD_INFORMATION)</strong></td>
+            <td><code>README.txt</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 36 ($STANDARD_INFORMATION)</td>
+            <td style="font-size:0.9em;">$STANDARD_INFORMATION Content Altered / Modification timestamp. Updated when data stream content is written or flushed to disk.</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 09:45:00 UTC</td>
+            <td><strong>MFT Record Modified ($STANDARD_INFORMATION)</strong></td>
+            <td><code>README.txt</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 36 ($STANDARD_INFORMATION)</td>
+            <td style="font-size:0.9em;">$STANDARD_INFORMATION MFT Record Modified timestamp. Updated by the NTFS kernel driver whenever any MFT attribute is modified. Highly resistant to userland tampering.</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 09:45:00 UTC</td>
+            <td><strong>Last Accessed ($STANDARD_INFORMATION)</strong></td>
+            <td><code>README.txt</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 36 ($STANDARD_INFORMATION)</td>
+            <td style="font-size:0.9em;">$STANDARD_INFORMATION Last Access timestamp. Indicates when file was opened or read. Note: Windows often disables or defers last access updates for performance (NtfsDisableLastAccessUpdate).</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 09:45:00 UTC</td>
+            <td><strong>Content Modified ($FILE_NAME)</strong></td>
+            <td><code>README.txt</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 36 ($FILE_NAME)</td>
+            <td style="font-size:0.9em;">$FILE_NAME Modification timestamp. Updated when the file is renamed or moved within directories; often preserves initial modification time.</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 09:45:00 UTC</td>
+            <td><strong>MFT Record Modified ($FILE_NAME)</strong></td>
+            <td><code>README.txt</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 36 ($FILE_NAME)</td>
+            <td style="font-size:0.9em;">$FILE_NAME MFT Modified timestamp. Updated on directory metadata operations.</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 09:45:00 UTC</td>
+            <td><strong>Last Accessed ($FILE_NAME)</strong></td>
+            <td><code>README.txt</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 36 ($FILE_NAME)</td>
+            <td style="font-size:0.9em;">$FILE_NAME Last Access timestamp. Associated with directory index updates.</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 10:30:00 UTC</td>
+            <td><strong>File Created ($STANDARD_INFORMATION)</strong></td>
+            <td><code>MEETING_NOTES.txt</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 37 ($STANDARD_INFORMATION)</td>
+            <td style="font-size:0.9em;">$STANDARD_INFORMATION Creation timestamp. Reflects file creation time as maintained by the Windows shell and application layer. Can be modified by userland APIs (vulnerable to timestomping).</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 10:30:00 UTC</td>
+            <td><strong>File Created ($FILE_NAME)</strong></td>
+            <td><code>MEETING_NOTES.txt</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 37 ($FILE_NAME)</td>
+            <td style="font-size:0.9em;">$FILE_NAME Creation timestamp. Recorded when the directory entry was first established. Copied from $STANDARD_INFORMATION at creation time and typically NOT altered by timestomping utilities.</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 11:15:00 UTC</td>
+            <td><strong>Content Modified ($STANDARD_INFORMATION)</strong></td>
+            <td><code>MEETING_NOTES.txt</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 37 ($STANDARD_INFORMATION)</td>
+            <td style="font-size:0.9em;">$STANDARD_INFORMATION Content Altered / Modification timestamp. Updated when data stream content is written or flushed to disk.</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 11:15:00 UTC</td>
+            <td><strong>MFT Record Modified ($STANDARD_INFORMATION)</strong></td>
+            <td><code>MEETING_NOTES.txt</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 37 ($STANDARD_INFORMATION)</td>
+            <td style="font-size:0.9em;">$STANDARD_INFORMATION MFT Record Modified timestamp. Updated by the NTFS kernel driver whenever any MFT attribute is modified. Highly resistant to userland tampering.</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 11:15:00 UTC</td>
+            <td><strong>Last Accessed ($STANDARD_INFORMATION)</strong></td>
+            <td><code>MEETING_NOTES.txt</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 37 ($STANDARD_INFORMATION)</td>
+            <td style="font-size:0.9em;">$STANDARD_INFORMATION Last Access timestamp. Indicates when file was opened or read. Note: Windows often disables or defers last access updates for performance (NtfsDisableLastAccessUpdate).</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 11:15:00 UTC</td>
+            <td><strong>Content Modified ($FILE_NAME)</strong></td>
+            <td><code>MEETING_NOTES.txt</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 37 ($FILE_NAME)</td>
+            <td style="font-size:0.9em;">$FILE_NAME Modification timestamp. Updated when the file is renamed or moved within directories; often preserves initial modification time.</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 11:15:00 UTC</td>
+            <td><strong>MFT Record Modified ($FILE_NAME)</strong></td>
+            <td><code>MEETING_NOTES.txt</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 37 ($FILE_NAME)</td>
+            <td style="font-size:0.9em;">$FILE_NAME MFT Modified timestamp. Updated on directory metadata operations.</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 11:15:00 UTC</td>
+            <td><strong>Last Accessed ($FILE_NAME)</strong></td>
+            <td><code>MEETING_NOTES.txt</code></td>
+            <td><span class="badge badge-success">Allocated</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 37 ($FILE_NAME)</td>
+            <td style="font-size:0.9em;">$FILE_NAME Last Access timestamp. Associated with directory index updates.</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 11:30:00 UTC</td>
+            <td><strong>File Created ($STANDARD_INFORMATION)</strong></td>
+            <td><code>BUDGET_DRAFT.txt</code></td>
+            <td><span class="badge badge-danger">Deleted</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 38 ($STANDARD_INFORMATION)</td>
+            <td style="font-size:0.9em;">$STANDARD_INFORMATION Creation timestamp. Reflects file creation time as maintained by the Windows shell and application layer. Can be modified by userland APIs (vulnerable to timestomping).</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 11:30:00 UTC</td>
+            <td><strong>File Created ($FILE_NAME)</strong></td>
+            <td><code>BUDGET_DRAFT.txt</code></td>
+            <td><span class="badge badge-danger">Deleted</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 38 ($FILE_NAME)</td>
+            <td style="font-size:0.9em;">$FILE_NAME Creation timestamp. Recorded when the directory entry was first established. Copied from $STANDARD_INFORMATION at creation time and typically NOT altered by timestomping utilities.</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 12:00:00 UTC</td>
+            <td><strong>Content Modified ($STANDARD_INFORMATION)</strong></td>
+            <td><code>BUDGET_DRAFT.txt</code></td>
+            <td><span class="badge badge-danger">Deleted</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 38 ($STANDARD_INFORMATION)</td>
+            <td style="font-size:0.9em;">$STANDARD_INFORMATION Content Altered / Modification timestamp. Updated when data stream content is written or flushed to disk.</td>
+            <td style="font-size:0.9em; background:#f8fafc;">Last active content modification prior to file deallocation.</td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 12:00:00 UTC</td>
+            <td><strong>Last Accessed ($STANDARD_INFORMATION)</strong></td>
+            <td><code>BUDGET_DRAFT.txt</code></td>
+            <td><span class="badge badge-danger">Deleted</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 38 ($STANDARD_INFORMATION)</td>
+            <td style="font-size:0.9em;">$STANDARD_INFORMATION Last Access timestamp. Indicates when file was opened or read. Note: Windows often disables or defers last access updates for performance (NtfsDisableLastAccessUpdate).</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 12:00:00 UTC</td>
+            <td><strong>Content Modified ($FILE_NAME)</strong></td>
+            <td><code>BUDGET_DRAFT.txt</code></td>
+            <td><span class="badge badge-danger">Deleted</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 38 ($FILE_NAME)</td>
+            <td style="font-size:0.9em;">$FILE_NAME Modification timestamp. Updated when the file is renamed or moved within directories; often preserves initial modification time.</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 12:00:00 UTC</td>
+            <td><strong>Last Accessed ($FILE_NAME)</strong></td>
+            <td><code>BUDGET_DRAFT.txt</code></td>
+            <td><span class="badge badge-danger">Deleted</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 38 ($FILE_NAME)</td>
+            <td style="font-size:0.9em;">$FILE_NAME Last Access timestamp. Associated with directory index updates.</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 12:42:00 UTC</td>
+            <td><strong>MFT Record Modified ($STANDARD_INFORMATION)</strong></td>
+            <td><code>BUDGET_DRAFT.txt</code></td>
+            <td><span class="badge badge-danger">Deleted</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 38 ($STANDARD_INFORMATION)</td>
+            <td style="font-size:0.9em;">$STANDARD_INFORMATION MFT Record Modified timestamp. Updated by the NTFS kernel driver whenever any MFT attribute is modified. Highly resistant to userland tampering.</td>
+            <td style="font-size:0.9em; background:#f8fafc;">MFT modification timestamp may correlate closely with the deallocation/deletion event.</td>
+        </tr>
+        
+        <tr>
+            <td style="white-space:nowrap; font-family:monospace;">2026-10-24 12:42:00 UTC</td>
+            <td><strong>MFT Record Modified ($FILE_NAME)</strong></td>
+            <td><code>BUDGET_DRAFT.txt</code></td>
+            <td><span class="badge badge-danger">Deleted</span></td>
+            <td style="font-size:0.85em; font-family:monospace;">$MFT Record 38 ($FILE_NAME)</td>
+            <td style="font-size:0.9em;">$FILE_NAME MFT Modified timestamp. Updated on directory metadata operations.</td>
+            <td style="font-size:0.9em; background:#f8fafc;"><em>Consistent with normal file operations.</em></td>
+        </tr>
+        
+                </tbody>
+            </table>
+        </div>
+
+        <!-- SECTION 6 -->
+        <h2>6. Recovery Attempt and Hash Verification</h2>
+        
+        <table class="report-table">
+            <tr>
+                <th style="width:25%;">Parameter</th>
+                <th>Observed Evidence</th>
+            </tr>
+            <tr>
+                <td>Recovery Verification Status</td>
+                <td><span class="badge" style="background:#16a34a; color:white; font-size:1.1em;">MATCH</span></td>
+            </tr>
+            <tr>
+                <td>Target Filename</td>
+                <td><code>BUDGET_DRAFT.txt</code> (MFT Record 38)</td>
+            </tr>
+            <tr>
+                <td>Recovered Output File</td>
+                <td><code>C:\deleted-file-forensics\outputs\recovered\CASE-2026-001\BUDGET_DRAFT.txt</code></td>
+            </tr>
+            <tr>
+                <td>Recovered Size</td>
+                <td>327 bytes</td>
+            </tr>
+            <tr>
+                <td>Recovered SHA-256</td>
+                <td><code style="word-break:break-all;">812c8c38e44b0cf4a6501bf015b6e079c2b376b453f3b37874710a49598ce6b4</code></td>
+            </tr>
+            <tr>
+                <td>Ground Truth Baseline SHA-256</td>
+                <td><code style="word-break:break-all;">812c8c38e44b0cf4a6501bf015b6e079c2b376b453f3b37874710a49598ce6b4</code></td>
+            </tr>
+            <tr>
+                <td>Recovered MD5</td>
+                <td><code style="word-break:break-all;">3c784cbfcc2974984f5889e6c83ba521</code></td>
+            </tr>
+            <tr>
+                <td>Examiner Notes</td>
+                <td>Cryptographic MATCH verified. Recovered SHA-256 matches staged baseline exactly. Recovery source: Resident $DATA attribute directly extracted from $MFT Record 38 (327 bytes).</td>
+            </tr>
+        </table>
+        
+
+        <!-- SECTION 7 -->
+        <h2>7. Supported Conclusions (Evidence-Backed)</h2>
+        <div class="alert alert-success">
+            <ul>
+                <li><strong>Historical Existence Confirmed:</strong> The file <code>BUDGET_DRAFT.txt</code> definitely existed on this NTFS volume, as proven by surviving Master File Table Record <code>38</code> with explicit $FILE_NAME and $STANDARD_INFORMATION structures.</li>
+                <li><strong>Deletion / Unallocation Observed:</strong> The MFT record header flags byte is <code>0x0000</code> (in-use bit cleared), proving that the file entry was deallocated by the operating system file system driver.</li>
+                <li><strong>Resident Data Persistence:</strong> Because <code>BUDGET_DRAFT.txt</code> was smaller than ~700 bytes, NTFS stored its data stream resident inside the 1024-byte MFT record itself. Deallocation unlinks the record but does not immediately zero out or overwrite resident data bytes.</li>
+                <li><strong>Cryptographic Ground-Truth Match:</strong> The recovered content yielded a SHA-256 hash identical to the staged original file recorded prior to deletion. The bitstream recovery is 100% complete and authentic.</li>
+            </ul>
+        </div>
+
+        <!-- SECTION 8 -->
+        <h2>8. Limitations, Caveats, and Known Unknowns</h2>
+        <div class="alert alert-warning">
+            <ul>
+                <li><strong>Attribution Unknown:</strong> File system timestamps and MFT records prove <em>what</em> events occurred to the metadata and data stream, but they do <strong>not</strong> prove <em>who</em> sat at the keyboard, which specific user account initiated the deletion, or whether deletion was manual or automated.</li>
+                <li><strong>Exact Deletion Moment Caveat:</strong> NTFS does not maintain a dedicated "Deletion Timestamp" field. The <code>$STANDARD_INFORMATION</code> MFT Modification timestamp (<code>$MFT Modified</code>) correlates closely with when the deallocation occurred, but confirmation of the exact deletion instant requires correlation with the USN Change Journal (<code>$UsnJrnl</code>) or Windows Security Event Logs (Event ID 4660 / 4663), which were not in scope for this isolated disk image.</li>
+                <li><strong>Cluster Overwrite Vulnerability:</strong> In an active production environment, unallocated MFT records and unallocated clusters are subject to immediate reuse by subsequent write operations. Recovery was successful here because the virtual disk was detached immediately after deletion before overwrite occurred.</li>
+            </ul>
+        </div>
+
+        <div class="footer">
+            <span>Digital Forensics Investigation Report &bull; Course: Information Security / Digital Crime Scene</span>
+            <span>Page 1 of 1 &bull; <code>deleted-file-forensics</code></span>
+        </div>
+    </div>
+</body>
+</html>

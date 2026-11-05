@@ -7,24 +7,24 @@ __pycache__/
 env/
 venv/
 .venv/
+.venv-win/
 
-# Forensic evidence and outputs
-evidence/*.raw
+# Forensic evidence and outputs (ignore transient large files, preserve reference evidence)
 evidence/*.dd
 evidence/*.img
 evidence/*.vhd
 evidence/*.vhdx
 outputs/recovered/*
-outputs/reports/*.html
+!outputs/recovered/.gitkeep
 outputs/reports/*.pdf
 outputs/cases/*
 !outputs/.gitkeep
-!outputs/recovered/.gitkeep
 !outputs/reports/.gitkeep
 
 # IDE / System
 .vscode/
 .idea/
+.tmp/
 *.swp
 Thumbs.db
 [Dd]esktop.ini

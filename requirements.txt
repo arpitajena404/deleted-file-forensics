@@ -1,0 +1,12 @@
+# Digital Crime Scene: Deleted File Forensics
+# Core Dependencies
+streamlit>=1.30.0
+pandas>=2.0.0
+rich>=13.0.0
+click>=8.1.0
+pytest>=8.0.0
+jinja2>=3.1.0
+
+# Optional Server / Deployment
+uvicorn>=0.25.0
+starlette>=0.35.0
